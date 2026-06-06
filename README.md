@@ -3,7 +3,7 @@
 A React + Vite web UI for the [Invoice Extractor API][backend]. Drag in an invoice,
 get the extracted data as a clean table, and export it as JSON or CSV.
 
-**Live demo:** [your-demo-url] · **Backend repo:** [link-to-backend-repo]
+**Live demo:** [invoice-extract-frontend-zeta.vercel.app](https://invoice-extract-frontend-zeta.vercel.app/) · **Backend repo:** [github.com/hkorzh/invoice-extract-backend](https://github.com/hkorzh/invoice-extract-backend)
 
 ## Features
 

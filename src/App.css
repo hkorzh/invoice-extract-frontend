@@ -167,6 +167,22 @@ body {
 }
 .downloads button:hover { background: var(--ink); color: var(--paper); }
 
+.repos {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.repos a {
+  color: var(--ink-soft);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  text-decoration: none;
+}
+.repos a:hover { color: var(--accent); }
+
 @media (max-width: 520px) {
   .panel { flex-direction: column; }
   .meta { grid-template-columns: 1fr; }

@@ -61,6 +61,23 @@ export default function App() {
       {error && <div className="error">{error}</div>}
 
       {data && <Result data={data} />}
+
+      <footer className="repos">
+        <a
+          href="https://github.com/hkorzh/invoice-extract-frontend"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Frontend repo
+        </a>
+        <a
+          href="https://github.com/hkorzh/invoice-extract-backend"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Backend repo
+        </a>
+      </footer>
     </div>
   );
 }
