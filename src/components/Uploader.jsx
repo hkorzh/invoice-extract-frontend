@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const ACCEPTED = [
   "image/png",
@@ -9,6 +9,16 @@ const ACCEPTED = [
 
 export default function Uploader({ file, loading, onFileChange, onExtract }) {
   const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Enter" && file && !loading) {
+        onExtract();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [file, loading, onExtract]);
 
   function handleDrop(e) {
     e.preventDefault();
