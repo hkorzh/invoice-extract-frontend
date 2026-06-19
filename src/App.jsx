@@ -8,12 +8,14 @@ const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 export default function App() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
 
   async function extract() {
     if (!file) return;
     setLoading(true);
+    setStatus(null);
     setError("");
     setData(null);
 
@@ -29,7 +31,31 @@ export default function App() {
         const detail = await res.json().catch(() => ({}));
         throw new Error(detail.detail || `Request failed (${res.status})`);
       }
-      setData(await res.json());
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          const line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+          if (!line.trim()) continue;
+
+          const update = JSON.parse(line);
+          setStatus(update.status);
+          if (update.status === "finished") {
+            setData(update.payload);
+          } else if (update.status === "error") {
+            setError(update.payload?.error || "Something went wrong.");
+          }
+        }
+      }
     } catch (e) {
       setError(e.message || "Something went wrong.");
     } finally {
@@ -41,6 +67,7 @@ export default function App() {
     setFile(f);
     setData(null);
     setError("");
+    setStatus(null);
   }
 
   return (
@@ -54,9 +81,14 @@ export default function App() {
       <Uploader
         file={file}
         loading={loading}
+        status={status}
         onFileChange={handleFileChange}
         onExtract={extract}
       />
+
+      {loading && status === "retrying" && (
+        <div className="retrying">Gemini hiccuped — retrying…</div>
+      )}
 
       {error && <div className="error">{error}</div>}
 

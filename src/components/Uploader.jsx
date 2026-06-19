@@ -7,7 +7,7 @@ const ACCEPTED = [
   "application/pdf",
 ];
 
-export default function Uploader({ file, loading, onFileChange, onExtract }) {
+export default function Uploader({ file, loading, status, onFileChange, onExtract }) {
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function Uploader({ file, loading, onFileChange, onExtract }) {
         </span>
       </label>
       <button className="run" onClick={onExtract} disabled={!file || loading}>
-        {loading ? "Reading…" : "Extract"}
+        {loading ? (status === "retrying" ? "Retrying…" : "Reading…") : "Extract"}
       </button>
     </section>
   );

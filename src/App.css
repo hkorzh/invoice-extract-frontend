@@ -106,6 +106,15 @@ body {
   font-size: 15px;
 }
 
+.retrying {
+  margin-top: 20px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--accent);
+  background: #f5f1e8;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
 .result { margin-top: 36px; }
 
 .meta {
