@@ -44,6 +44,7 @@ export default function Uploader({ file, loading, status, onFileChange, onExtrac
           type="file"
           accept={ACCEPTED.join(",")}
           onChange={(e) => onFileChange(e.target.files[0])}
+          disabled={loading}
         />
         <span>
           {file
