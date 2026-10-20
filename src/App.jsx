@@ -5,10 +5,33 @@ import Result from "./components/Result";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+// Gemini thought summaries are Markdown that open with a bold title,
+// e.g. "**Identifying Invoice Details**\n\n..." — the title alone makes a good status line.
+function thoughtTitle(text) {
+  const bold = text.match(/\*\*(.+?)\*\*/);
+  return (bold ? bold[1] : text.split("\n")[0]).trim();
+}
+
+function progressText(status, thought) {
+  switch (status) {
+    case "waiting":
+      return "Sending the invoice to Gemini…";
+    case "thinking":
+      return thought ? `${thought}…` : "Thinking…";
+    case "writing":
+      return "Writing up the results…";
+    case "retrying":
+      return "Gemini hiccuped — retrying…";
+    default:
+      return null;
+  }
+}
+
 export default function App() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
+  const [thought, setThought] = useState(null);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
 
@@ -16,6 +39,7 @@ export default function App() {
     if (!file) return;
     setLoading(true);
     setStatus(null);
+    setThought(null);
     setError("");
     setData(null);
 
@@ -23,7 +47,7 @@ export default function App() {
     form.append("file", file);
 
     try {
-      const res = await fetch(`${API_URL}/extract`, {
+      const res = await fetch(`${API_URL}/extract/live`, {
         method: "POST",
         body: form,
       });
@@ -49,7 +73,11 @@ export default function App() {
 
           const update = JSON.parse(line);
           setStatus(update.status);
-          if (update.status === "finished") {
+          if (update.status === "thinking" && update.payload?.thought) {
+            setThought(thoughtTitle(update.payload.thought));
+          } else if (update.status === "retrying") {
+            setThought(null);
+          } else if (update.status === "finished") {
             setData(update.payload);
           } else if (update.status === "error") {
             setError(update.payload?.error || "Something went wrong.");
@@ -68,7 +96,10 @@ export default function App() {
     setData(null);
     setError("");
     setStatus(null);
+    setThought(null);
   }
+
+  const progress = loading && progressText(status, thought);
 
   return (
     <div className="page">
@@ -86,8 +117,10 @@ export default function App() {
         onExtract={extract}
       />
 
-      {loading && status === "retrying" && (
-        <div className="retrying">Gemini hiccuped — retrying…</div>
+      {progress && (
+        <div className="progress" aria-live="polite">
+          {progress}
+        </div>
       )}
 
       {error && <div className="error">{error}</div>}

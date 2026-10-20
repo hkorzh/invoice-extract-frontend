@@ -106,7 +106,7 @@ body {
   font-size: 15px;
 }
 
-.retrying {
+.progress {
   margin-top: 20px;
   padding: 14px 18px;
   border-left: 3px solid var(--accent);
