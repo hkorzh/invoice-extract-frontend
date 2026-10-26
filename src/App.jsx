@@ -6,7 +6,7 @@ import Result from "./components/Result";
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 // Matches the backend's MAX_BATCH_FILES default.
-const MAX_FILES = 10;
+const MAX_FILES = 5;
 
 // Gemini thought summaries are Markdown that open with a bold title,
 // e.g. "**Identifying Invoice Details**\n\n..." — the title alone makes a good status line.
@@ -83,15 +83,24 @@ export default function App() {
   const [error, setError] = useState("");
   const [jobs, setJobs] = useState([]);
   const [extracted, setExtracted] = useState(false);
+  // Validation message for the current file selection, e.g. too many files.
+  const [selectionError, setSelectionError] = useState("");
 
   function addFiles(picked) {
-    setFiles((prev) => {
-      const fresh = picked.filter((f) => !prev.some((p) => sameFile(p, f)));
-      return [...prev, ...fresh].slice(0, MAX_FILES);
-    });
+    const fresh = picked.filter((f) => !files.some((p) => sameFile(p, f)));
+    const all = [...files, ...fresh];
+    // Keep the first MAX_FILES and say what was left out, rather than dropping it silently.
+    const skipped = all.length - MAX_FILES;
+    setSelectionError(
+      skipped > 0
+        ? `You can upload up to ${MAX_FILES} files at once — ${skipped} ${skipped === 1 ? "file was" : "files were"} not added.`
+        : ""
+    );
+    setFiles(all.slice(0, MAX_FILES));
   }
 
   function removeFile(index) {
+    setSelectionError("");
     setFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
@@ -103,6 +112,7 @@ export default function App() {
     setExtracted(true);
     setLoading(true);
     setError("");
+    setSelectionError("");
     setJobs(
       current.map((f) => ({ name: f.name, status: null, thought: null, data: null, error: "" }))
     );
@@ -157,6 +167,12 @@ export default function App() {
         onRemove={removeFile}
         onExtract={extract}
       />
+
+      {selectionError && (
+        <div className="error" role="alert">
+          {selectionError}
+        </div>
+      )}
 
       {error && <div className="error">{error}</div>}
 
