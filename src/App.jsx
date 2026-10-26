@@ -34,9 +34,14 @@ export default function App() {
   const [thought, setThought] = useState(null);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
+  const [extracted, setExtracted] = useState(false);
 
   async function extract() {
     if (!file) return;
+    // Hand the file off and free the dropzone right away so the next one can be picked.
+    const current = file;
+    setFile(null);
+    setExtracted(true);
     setLoading(true);
     setStatus(null);
     setThought(null);
@@ -44,7 +49,7 @@ export default function App() {
     setData(null);
 
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", current);
 
     try {
       const res = await fetch(`${API_URL}/extract/live`, {
@@ -91,13 +96,6 @@ export default function App() {
     }
   }
 
-  function handleFileChange(f) {
-    setFile(f);
-    setData(null);
-    setError("");
-    setStatus(null);
-    setThought(null);
-  }
 
   const progress = loading && progressText(status, thought);
 
@@ -113,7 +111,9 @@ export default function App() {
         file={file}
         loading={loading}
         status={status}
-        onFileChange={handleFileChange}
+        extracted={extracted}
+        onFileChange={setFile}
+        onRemove={() => setFile(null)}
         onExtract={extract}
       />
 

@@ -53,26 +53,29 @@ body {
 }
 
 .panel {
+  position: relative;
   display: flex;
-  gap: 12px;
-  align-items: stretch;
+  flex-direction: column;
   border: 1.5px solid var(--ink);
   padding: 14px;
   background: #fffdf8;
 }
 
 .filepick {
-  flex: 1;
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 0 16px;
+  justify-content: center;
+  gap: 8px;
+  min-height: 140px;
+  padding: 24px 16px;
   border: 1px dashed var(--line);
   cursor: pointer;
   color: var(--ink-soft);
   font-weight: 500;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  text-align: center;
+  transition: opacity 0.25s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .filepick:hover { border-color: var(--accent); color: var(--ink); }
 .filepick.dragging {
@@ -83,6 +86,158 @@ body {
 }
 .filepick input { display: none; }
 
+/* Extraction in progress: dropzone is locked and covered by a loader. */
+.filepick.busy { cursor: progress; }
+.filepick.busy:hover { border-color: var(--line); color: var(--ink-soft); }
+.filepick-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 253, 248, 0.88);
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.filepick.busy .filepick-overlay { opacity: 1; }
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Indeterminate bar along the panel's top edge. */
+.loadbar {
+  position: absolute;
+  top: -1.5px;
+  left: -1.5px;
+  right: -1.5px;
+  height: 3px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.loadbar.active { opacity: 1; }
+.loadbar.active::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: var(--accent);
+  animation: loadbar 1.2s ease-in-out infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes loadbar {
+  from { left: -40%; }
+  to { left: 100%; }
+}
+.filepick-hint {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
+/* Collapsible rows under the dropzone: height animates via grid rows, spacing lives inside
+   so a collapsed row takes up no room at all. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: grid-template-rows 0.28s ease, opacity 0.2s ease, transform 0.28s ease;
+}
+.reveal.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: none;
+}
+.reveal-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.reveal-inner > * { margin-top: 12px; }
+.reveal-inner > .run { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .filepick,
+  .filepick-overlay,
+  .slots-box { transition: none; }
+  .spinner,
+  .loadbar.active::after { animation-duration: 2.4s; }
+}
+
+/* Dropzone and file slots share one cell and cross-fade, so swapping them doesn't shift layout. */
+.dropstack { display: grid; }
+.dropstack > * { grid-area: 1 / 1; }
+
+.filepick.covered { opacity: 0; }
+
+.slots-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  color: var(--ink-soft);
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.slots-box.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+}
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.slot-name {
+  min-width: 0;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.slot-remove {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.slot-remove:hover { color: var(--danger); }
+
 .run {
   border: none;
   background: var(--accent);
@@ -92,7 +247,7 @@ body {
   letter-spacing: 0.04em;
   padding: 16px 28px;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, background 0.2s ease;
 }
 .run:hover:not(:disabled) { opacity: 0.88; }
 .run:disabled { opacity: 0.4; cursor: not-allowed; }
