@@ -19,7 +19,9 @@ function triggerDownload(blob, name) {
   URL.revokeObjectURL(url);
 }
 
-export default function Result({ data }) {
+export default function Result({ data, name }) {
+  // Downloads are named after the source file, e.g. "acme-march.pdf" -> "acme-march.json".
+  const base = name ? name.replace(/\.[^.]+$/, "") : "invoice";
   const currency = data.currency || null;
   const suffix = currency ? ` (${currency})` : "";
 
@@ -27,7 +29,7 @@ export default function Result({ data }) {
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
     });
-    triggerDownload(blob, "invoice.json");
+    triggerDownload(blob, `${base}.json`);
   }
 
   function downloadCSV() {
@@ -36,7 +38,7 @@ export default function Result({ data }) {
       rows.push([li.description, li.quantity, li.unit_price, li.amount])
     );
     const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
-    triggerDownload(new Blob([csv], { type: "text/csv" }), "invoice.csv");
+    triggerDownload(new Blob([csv], { type: "text/csv" }), `${base}.csv`);
   }
 
   return (

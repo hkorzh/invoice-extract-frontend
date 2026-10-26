@@ -7,9 +7,11 @@ get the extracted data as a clean table, and export it as JSON or CSV.
 
 ## Features
 
-- Drag-and-drop or click to upload an invoice (image or PDF)
-- Calls the extraction API and renders vendor, date, line items, and totals
-- Download the result as JSON or CSV
+- Drag-and-drop or click to upload up to 10 invoices at once (images or PDFs)
+- Sends them to the API's `/extract/batch` endpoint, which processes them concurrently
+- Live per-file progress (queued, uploading, Gemini's thinking), and each invoice's
+  vendor, date, line items, and totals as soon as it's ready
+- Download each result as JSON or CSV, named after its source file
 - Clear loading and error states; layout collapses cleanly on mobile
 
 ## Stack

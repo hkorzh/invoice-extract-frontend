@@ -188,7 +188,9 @@ body {
 
 .slots-box {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 10px;
   justify-content: center;
   padding: 16px;
   border: 1px dashed var(--line);
@@ -238,6 +240,15 @@ body {
 }
 .slot-remove:hover { color: var(--danger); }
 
+.slot-add {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  cursor: pointer;
+}
+.slot-add:hover { text-decoration: underline; }
+.slot-add input { display: none; }
+
 .run {
   border: none;
   background: var(--accent);
@@ -270,7 +281,24 @@ body {
   font-size: 15px;
 }
 
-.result { margin-top: 36px; }
+/* One block per file of a batch run. */
+.job { margin-top: 36px; }
+.job + .job {
+  padding-top: 36px;
+  border-top: 1px solid var(--line);
+}
+.job-name {
+  margin: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.result { margin-top: 20px; }
 
 .meta {
   display: grid;
