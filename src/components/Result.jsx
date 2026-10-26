@@ -1,5 +1,9 @@
 const money = (v) => (v == null ? "—" : v);
 
+// Optional ISO 4217 code (e.g. "USD"); older backends don't send it.
+const withCurrency = (v, currency) =>
+  v == null || !currency ? money(v) : `${v} ${currency}`;
+
 // CSV cell escaping: quote anything with a comma, quote, or newline.
 const csvCell = (v) => {
   const s = v == null ? "" : String(v);
@@ -16,6 +20,9 @@ function triggerDownload(blob, name) {
 }
 
 export default function Result({ data }) {
+  const currency = data.currency || null;
+  const suffix = currency ? ` (${currency})` : "";
+
   function downloadJSON() {
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
@@ -45,11 +52,11 @@ export default function Result({ data }) {
         </div>
         <div>
           <span className="label">Subtotal</span>
-          <span className="value mono">{money(data.subtotal)}</span>
+          <span className="value mono">{withCurrency(data.subtotal, currency)}</span>
         </div>
         <div>
           <span className="label">Total</span>
-          <span className="value mono strong">{money(data.total)}</span>
+          <span className="value mono strong">{withCurrency(data.total, currency)}</span>
         </div>
       </div>
 
@@ -58,8 +65,8 @@ export default function Result({ data }) {
           <tr>
             <th>Description</th>
             <th className="num">Qty</th>
-            <th className="num">Unit</th>
-            <th className="num">Amount</th>
+            <th className="num">Unit{suffix}</th>
+            <th className="num">Amount{suffix}</th>
           </tr>
         </thead>
         <tbody>
