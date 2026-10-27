@@ -4,6 +4,8 @@ const money = (v) => (v == null ? "—" : v);
 const withCurrency = (v, currency) =>
   v == null || !currency ? money(v) : `${v} ${currency}`;
 
+const percent = (v) => (v == null ? "—" : `${v}%`);
+
 // CSV cell escaping: quote anything with a comma, quote, or newline.
 const csvCell = (v) => {
   const s = v == null ? "" : String(v);
@@ -24,6 +26,11 @@ export default function Result({ data, name }) {
   const base = name ? name.replace(/\.[^.]+$/, "") : "invoice";
   const currency = data.currency || null;
   const suffix = currency ? ` (${currency})` : "";
+  const lineItems = data.line_items || [];
+  // Only show the per-line tax column when the invoice prints a rate somewhere.
+  const showTax = lineItems.some((li) => li.tax_percent != null);
+  // Same rule as the batch summary: prefer the explicit with-tax figure.
+  const total = data.total_with_tax ?? data.total;
 
   function downloadJSON() {
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -33,9 +40,9 @@ export default function Result({ data, name }) {
   }
 
   function downloadCSV() {
-    const rows = [["description", "quantity", "unit_price", "amount"]];
-    (data.line_items || []).forEach((li) =>
-      rows.push([li.description, li.quantity, li.unit_price, li.amount])
+    const rows = [["description", "quantity", "unit_price", "amount", "tax_percent"]];
+    lineItems.forEach((li) =>
+      rows.push([li.description, li.quantity, li.unit_price, li.amount, li.tax_percent])
     );
     const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
     triggerDownload(new Blob([csv], { type: "text/csv" }), `${base}.csv`);
@@ -57,8 +64,12 @@ export default function Result({ data, name }) {
           <span className="value mono">{withCurrency(data.subtotal, currency)}</span>
         </div>
         <div>
+          <span className="label">Tax</span>
+          <span className="value mono">{withCurrency(data.total_tax, currency)}</span>
+        </div>
+        <div>
           <span className="label">Total</span>
-          <span className="value mono strong">{withCurrency(data.total, currency)}</span>
+          <span className="value mono strong">{withCurrency(total, currency)}</span>
         </div>
       </div>
 
@@ -69,20 +80,22 @@ export default function Result({ data, name }) {
             <th className="num">Qty</th>
             <th className="num">Unit{suffix}</th>
             <th className="num">Amount{suffix}</th>
+            {showTax && <th className="num">Tax</th>}
           </tr>
         </thead>
         <tbody>
-          {(data.line_items || []).length === 0 ? (
+          {lineItems.length === 0 ? (
             <tr>
               <td colSpan={4} className="empty">No line items found.</td>
             </tr>
           ) : (
-            data.line_items.map((li, i) => (
+            lineItems.map((li, i) => (
               <tr key={i}>
                 <td>{li.description || "—"}</td>
                 <td className="num mono">{money(li.quantity)}</td>
                 <td className="num mono">{money(li.unit_price)}</td>
                 <td className="num mono">{money(li.amount)}</td>
+                {showTax && <td className="num mono">{percent(li.tax_percent)}</td>}
               </tr>
             ))
           )}

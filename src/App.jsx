@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./App.css";
 import Uploader from "./components/Uploader";
 import Result from "./components/Result";
+import Summary from "./components/Summary";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -77,12 +78,20 @@ function applyUpdate(job, update) {
 
 const isSettled = (job) => job.status === "finished" || job.status === "error";
 
+const TABS = [
+  { id: "invoices", label: "Invoices" },
+  { id: "summary", label: "Summary" },
+];
+
 export default function App() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [jobs, setJobs] = useState([]);
   const [extracted, setExtracted] = useState(false);
+  // The batch's closing "done" payload; null until it arrives.
+  const [summary, setSummary] = useState(null);
+  const [tab, setTab] = useState("invoices");
   // Validation message for the current file selection, e.g. too many files.
   const [selectionError, setSelectionError] = useState("");
 
@@ -113,6 +122,7 @@ export default function App() {
     setLoading(true);
     setError("");
     setSelectionError("");
+    setSummary(null);
     setJobs(
       current.map((f) => ({ name: f.name, status: null, thought: null, data: null, error: "" }))
     );
@@ -131,8 +141,11 @@ export default function App() {
       }
 
       await readNdjson(res, (update) => {
-        // Only per-file updates carry an index; the closing "done" needs no handling.
-        if (update.file == null) return;
+        // Only per-file updates carry an index; the closing "done" carries the totals.
+        if (update.file == null) {
+          if (update.status === "done") setSummary(update.payload);
+          return;
+        }
         setJobs((prev) =>
           prev.map((job, i) => (i === update.file ? applyUpdate(job, update) : job))
         );
@@ -176,23 +189,51 @@ export default function App() {
 
       {error && <div className="error">{error}</div>}
 
-      {jobs.map((job, i) => {
-        const progress = progressText(job.status, job.thought);
-        return (
-          <section className="job" key={i}>
-            <h2 className="job-name" title={job.name}>
-              {job.name}
-            </h2>
-            {progress && !isSettled(job) && (
-              <div className="progress" aria-live="polite">
-                {progress}
-              </div>
-            )}
-            {job.error && <div className="error">{job.error}</div>}
-            {job.data && <Result data={job.data} name={job.name} />}
-          </section>
-        );
-      })}
+      {jobs.length > 0 && (
+        <div className="tabs" role="tablist">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              id={`tab-${t.id}`}
+              role="tab"
+              aria-selected={tab === t.id}
+              aria-controls={`panel-${t.id}`}
+              className={`tab${tab === t.id ? " active" : ""}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {jobs.length > 0 && tab === "summary" && (
+        <div id="panel-summary" role="tabpanel" aria-labelledby="tab-summary">
+          <Summary summary={summary} loading={loading} />
+        </div>
+      )}
+
+      {jobs.length > 0 && tab === "invoices" && (
+        <div id="panel-invoices" role="tabpanel" aria-labelledby="tab-invoices">
+          {jobs.map((job, i) => {
+            const progress = progressText(job.status, job.thought);
+            return (
+              <section className="job" key={i}>
+                <h2 className="job-name" title={job.name}>
+                  {job.name}
+                </h2>
+                {progress && !isSettled(job) && (
+                  <div className="progress" aria-live="polite">
+                    {progress}
+                  </div>
+                )}
+                {job.error && <div className="error">{job.error}</div>}
+                {job.data && <Result data={job.data} name={job.name} />}
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       <footer className="repos">
         <a
